@@ -2,6 +2,7 @@
 
 const Fractal = require('@frctl/fractal');
 const _ = require('lodash');
+const fs = require('fs');
 const Path = require('path');
 const utils = Fractal.utils;
 
@@ -167,36 +168,49 @@ class TwigAdapter extends Fractal.Adapter {
         }
     }
 
-    fixIncludePath (location) {
-        /*
-         * Calculate the relative path from the template directory to the actual template file.
-         *
-         * Twig uses a root directory and all includes are based upon that directory.
-         * The following examples clarify why it's necessary to specify he root directory independently
-         * from the template file that should be rendered.
-         *
-         * Including atoms/button.twig from index.twig at the root level would be fine when
-         * rendering index.twig.
-         *
-         * Rendering atoms/button.twig from molecules/list.twig would break because the root
-         * directory is molecules/list and Twig would try to incude molecules/list/atoms/button/button.twig,
-         * resulting in a "Template not found error"
-         *
-         * 'location' is the inappropriate path that the engine is trying to reach, we will fix it.
-         */
-        var locationPathChunks = location.split('/'); // this will result for instance in ['organisms', 'menu', 'molecules', 'languages', 'languages.twig']
-        var firstLevelFolderNames = ['atoms', 'molecules', 'organisms']; // TODO: get this from a config file
+    /**
+     * Fix the path of the template
+     *
+     * Twig uses a root directory and all includes are based upon that directory.
+     * The following examples clarify why it's necessary to specify he root directory independently
+     * from the template file that should be rendered.
+     *
+     * Including atoms/button.twig from index.twig at the root level would be fine when
+     * rendering index.twig.
+     *
+     * Rendering atoms/button.twig from molecules/list.twig would break because the root
+     * directory is molecules/list and Twig would try to incude molecules/list/atoms/button/button.twig,
+     * resulting in a "Template not found error"
+     *
+     * 'location' is the inappropriate path that the engine is trying to reach, we will fix it.
+     * 
+     * In order to fix the location test id the template exists in the possibles paths 
+     * starting from bottom to up in the location relative path.
+     * 
+     * @param {String} rootDirectory Root directry absolute path where twig start to look for the templates.
+     * @param {String} location Template relative path.
+     * @returns {String} Template fix absolute path.
+     */
+    fixIncludePath (rootDirectory, location) {
 
-        // Start from the end of the locationPathChunks to find a match faster
-        for (var i = locationPathChunks.length - 1; i >= 0; i--) {
-            if ( firstLevelFolderNames.includes(locationPathChunks[i]) ) {
-                // We found a match, so we will rebuild the appropriate path
-                var newLocationChunks = locationPathChunks.slice(i, locationPathChunks.length); // will give for instance ['molecules', 'languages', 'languages.twig']
-                var newLocation = Path.join(source.fullPath, newLocationChunks.join('/')); // source.fullPath looks like YOUR_HOME_FOLDER/theme/styleguide/components
-                break; // exit loop at the first match we found
-            }
+        // Bail early if the location is already correct
+        if ( fs.existsSync( Path.join(rootDirectory, location ) ) ) {
+            return Path.join(rootDirectory, location );
         }
-        return newLocation;
+
+        const locationPathChunks = location.split('/');
+        const length = locationPathChunks.length;
+        
+        let i = 0,
+            path;
+
+        do {
+            // get the chunks starting from the end of the array
+            let chunks = locationPathChunks.slice(length - 1 - i); 
+            path = Path.join(rootDirectory, ...chunks);
+        } while ( !fs.existsSync( path ) && (++i) < length );
+
+        return path;
     }
 
 }
