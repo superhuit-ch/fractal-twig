@@ -29,7 +29,7 @@ class TwigAdapter extends Fractal.Adapter {
                 if (params.precompiled) {
                     params.data = params.precompiled;
                 } else {
-                    let view = isHandle(location) ? self.getView(location) : _.find(self.views, {path: self.fixIncludePath(location)});
+                    let view = isHandle(location) ? self.getView(location) : _.find(self.views, {path: self.fixIncludePath(source.fullPath, location)});
 
                     if (!view) {
                         throw new Error(`Template ${location} not found; make sure you add a leading forward slash to your path if you're trying to include a component -> include /atoms/button/button.twig for instance`);
