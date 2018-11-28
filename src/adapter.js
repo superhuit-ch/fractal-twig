@@ -15,38 +15,6 @@ class TwigAdapter extends Fractal.Adapter {
 
         let self = this;
 
-        function fixIncludePath (location) {
-            /*
-             * Calculate the relative path from the template directory to the actual template file.
-             *
-             * Twig uses a root directory and all includes are based upon that directory.
-             * The following examples clarify why it's necessary to specify he root directory independently
-             * from the template file that should be rendered.
-             *
-             * Including atoms/button.twig from index.twig at the root level would be fine when
-             * rendering index.twig.
-             *
-             * Rendering atoms/button.twig from molecules/list.twig would break because the root
-             * directory is molecules/list and Twig would try to incude molecules/list/atoms/button/button.twig,
-             * resulting in a "Template not found error"
-             *
-             * 'location' is the inappropriate path that the engine is trying to reach, we will fix it.
-             */
-            var locationPathChunks = location.split('/'); // this will result for instance in ['organisms', 'menu', 'molecules', 'languages', 'languages.twig']
-            var firstLevelFolderNames = ['atoms', 'molecules', 'organisms']; // TODO: get this from a config file
-
-            // Start from the end of the locationPathChunks to find a match faster
-            for (var i = locationPathChunks.length - 1; i >= 0; i--) {
-                if ( firstLevelFolderNames.includes(locationPathChunks[i]) ) {
-                    // We found a match, so we will rebuild the appropriate path
-                    var newLocationChunks = locationPathChunks.slice(i, locationPathChunks.length); // will give for instance ['molecules', 'languages', 'languages.twig']
-                    var newLocation = Path.join(source.fullPath, newLocationChunks.join('/')); // source.fullPath looks like YOUR_HOME_FOLDER/theme/styleguide/components
-                    break; // exit loop at the first match we found
-                }
-            }
-            return newLocation;
-        }
-
         Twig.extend(function(Twig) {
 
             /*
@@ -65,7 +33,7 @@ class TwigAdapter extends Fractal.Adapter {
                      * For instance, make sure you include "/atoms/button/button.twig" with the leading forward slash,
                      * (and not just atoms/button/button.twig) if you're not at the root level.
                      */
-                    var componentPath = location.startsWith("/") ? fixIncludePath(location) : Path.join(source.fullPath, location);
+                    var componentPath = location.startsWith("/") ? self.fixIncludePath(location) : Path.join(source.fullPath, location);
                     let view = isHandle(location) ? self.getView(location) : _.find(self.views, {path: componentPath});
 
                     if (!view) {
@@ -203,6 +171,38 @@ class TwigAdapter extends Fractal.Adapter {
                 context[key] = value;
             }
         }
+    }
+
+    fixIncludePath (location) {
+        /*
+         * Calculate the relative path from the template directory to the actual template file.
+         *
+         * Twig uses a root directory and all includes are based upon that directory.
+         * The following examples clarify why it's necessary to specify he root directory independently
+         * from the template file that should be rendered.
+         *
+         * Including atoms/button.twig from index.twig at the root level would be fine when
+         * rendering index.twig.
+         *
+         * Rendering atoms/button.twig from molecules/list.twig would break because the root
+         * directory is molecules/list and Twig would try to incude molecules/list/atoms/button/button.twig,
+         * resulting in a "Template not found error"
+         *
+         * 'location' is the inappropriate path that the engine is trying to reach, we will fix it.
+         */
+        var locationPathChunks = location.split('/'); // this will result for instance in ['organisms', 'menu', 'molecules', 'languages', 'languages.twig']
+        var firstLevelFolderNames = ['atoms', 'molecules', 'organisms']; // TODO: get this from a config file
+
+        // Start from the end of the locationPathChunks to find a match faster
+        for (var i = locationPathChunks.length - 1; i >= 0; i--) {
+            if ( firstLevelFolderNames.includes(locationPathChunks[i]) ) {
+                // We found a match, so we will rebuild the appropriate path
+                var newLocationChunks = locationPathChunks.slice(i, locationPathChunks.length); // will give for instance ['molecules', 'languages', 'languages.twig']
+                var newLocation = Path.join(source.fullPath, newLocationChunks.join('/')); // source.fullPath looks like YOUR_HOME_FOLDER/theme/styleguide/components
+                break; // exit loop at the first match we found
+            }
+        }
+        return newLocation;
     }
 
 }
