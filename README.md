@@ -7,9 +7,10 @@ This fork from the [official Twig adapter for fractal](https://github.com/frctl/
 ## Why is this necessary?
 
 Twig uses a root directory and all includes are based upon that directory.
-Including atoms/button.twig from index.twig at the root level would be fine when rendering index.twig.
 
-However, rendering atoms/button.twig from molecules/list.twig would break because the root directory is molecules/list and Twig would try to incude molecules/list/atoms/button/button.twig, resulting in a "Template not found error".
+Including `atoms/button.twig` from `index.twig` at the root level would be fine when rendering `index.twig`.
+
+However, rendering `atoms/button.twig` from `molecules/list.twig` would break because the root directory would be `molecules/list` and Twig would try to include `molecules/list/atoms/button/button.twig`, resulting in a "Template not found error".
 
 ## OK, cool, how do I use this?
 You can now prefix your path with a forward slash to avoid the "Template not found" error when including components.
