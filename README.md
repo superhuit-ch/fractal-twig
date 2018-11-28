@@ -15,6 +15,5 @@ However, rendering `atoms/button.twig` from `molecules/list.twig` would break be
 ## OK, cool, how do I use this?
 You can now prefix your path with a forward slash to avoid the "Template not found" error when including components.
 
-If `include atoms/button/button.twig` returns a "Template not found" error, use
-
+If `include atoms/button/button.twig` returns a "Template not found" error, simply add a leading forward slash:
 `include /atoms/button/button.twig`. 
